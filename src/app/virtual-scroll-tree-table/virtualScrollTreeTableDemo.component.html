@@ -1,0 +1,280 @@
+<div class="searchSelect">
+  <d-select [options]="searchSelectSource" [filterKey]="'name'" [(ngModel)]="searchAttr" (ngModelChange)="searchSelectChange()"></d-select>
+</div>
+
+<d-search style="width: 300px" [placeholder]="'搜索'" [isKeyupSearch]="true" (searchFn)="search($event)"></d-search>
+
+<div class="golbalOperationRow">
+  <d-button [disabled]="isSearch" class="golbalBtn allNodesExpand" icon="icon-op-delete" bsStyle="common" (click)="batchDelete()">
+    批量删除
+  </d-button>
+  <d-button
+    [disabled]="isSearch"
+    *ngIf="!isOpenAll"
+    class="golbalBtn allNodesExpand"
+    icon="icon-expand-info"
+    bsStyle="common"
+    (click)="toggleAllNodesExpand(true)"
+  >全部展开</d-button>
+  <d-button
+    [disabled]="isSearch"
+    *ngIf="isOpenAll"
+    class="golbalBtn allNodesCollapse"
+    icon="icon-collapse-info"
+    bsStyle="common"
+    (click)="toggleAllNodesExpand(false)"
+  >全部收起</d-button>
+  <d-button
+    [disabled]="isAddGolbalData || isSearch"
+    class="golbalBtn addFolder"
+    icon="icon-add-directory"
+    bsStyle="common"
+    (click)="addGolbal('folder')"
+  >添加文件夹</d-button>
+  <d-button
+    [disabled]="isAddGolbalData || isSearch"
+    class="golbalBtn addNode"
+    icon="icon-add-file"
+    bsStyle="primary"
+    (click)="addGolbal('node')"
+  >添加节点</d-button>
+</div>
+
+<d-virtual-scroll-tree-table-test
+  #VirtualTableTree
+  [dataSource]="dataSource"
+  [editOption]="editOption"
+  [showRowIndex]="showRowIndex"
+  [dataTableProperties]="dataTableProperties"
+  (save)="save($event)"
+  (allChecked)="allChecked($event)"
+>
+  <d-column field="checked" [header]="" [width]="'30px'" [order]="0">
+    <d-head-cell>
+      <ng-template let-column="column">
+        <d-checkbox
+          id="virtual-scroll-tree-table-allCheck"
+          [isShowTitle]="false"
+          (change)="onAllCheckChange($event)"
+          [halfchecked]="halfCheck"
+          [(ngModel)]="allCheck"
+        >
+        </d-checkbox>
+      </ng-template>
+    </d-head-cell>
+    <d-cell>
+      <ng-template let-rowItem="rowItem" let-rowIndex="rowIndex">
+        <d-checkbox
+          [ngModelOptions]="{ standalone: true }"
+          [ngModel]="rowItem.checked"
+          [halfchecked]="rowItem.halfChecked"
+          (ngModelChange)="onRowCheckChange($event, rowItem)"
+          dTooltip
+          [content]="rowItem.$checkBoxTips"
+          [position]="['top', 'right', 'botton', 'left']"
+          [showAnimation]="false"
+        ></d-checkbox>
+      </ng-template>
+    </d-cell>
+  </d-column>
+
+  <d-column field="drag" header="" [width]="'15px'" [order]="1">
+    <d-cell>
+      <ng-template let-rowItem="rowItem" let-rowIndex="rowIndex">
+        <span [ngClass]="{ 'table-drag-row-handle': rowItem.node_type === 0 }">
+          <div class="icon-drag-small dragLine" *ngIf="rowItem.node_type === 0" (mousedown)="dragDown($event, rowItem, rowIndex)"></div>
+        </span>
+      </ng-template>
+    </d-cell>
+  </d-column>
+
+  <d-column header="#" [width]="'70px'" [order]="2">
+    <d-cell>
+      <ng-template let-rowItem="rowItem">
+        <span>
+          {{ rowItem.by_order }}
+        </span>
+      </ng-template>
+    </d-cell>
+  </d-column>
+
+  <d-column field="category" header="类别" [order]="3" [width]="'70px'" [editable]="true" [extraOptions]="{ editableTip: 'btn' }">
+    <d-cell>
+      <ng-template let-rowItem="rowItem">
+        <span class="value">
+          {{ rowItem.category }}
+        </span>
+      </ng-template>
+    </d-cell>
+    <d-cell-edit>
+      <ng-template let-rowItem="rowItem" let-column="column">
+        <div class="customized-editor edit-padding-fix">
+          <d-select
+            [options]="editOption.category"
+            autoFocus="true"
+            toggleOnFocus="true"
+            [appendToBody]="true"
+            [(ngModel)]="rowItem.category"
+            (ngModelChange)="onEditEnd(rowItem, 'categoryEdit')"
+          >
+          </d-select>
+        </div>
+      </ng-template>
+    </d-cell-edit>
+  </d-column>
+
+  <d-column field="name" header="名称" [width]="'130px'" [order]="4" [editable]="true" [extraOptions]="{ editableTip: 'btn' }">
+    <d-cell>
+      <ng-template let-rowItem="rowItem">
+        <span [ngStyle]="{ 'padding-left': (rowItem.level - 1) * 8 + 'px', display: 'inline-block' }">
+          <span
+            class="tree-table-icon"
+            [ngClass]="rowItem.expand ? 'icon-open-folder' : 'icon-close-folder'"
+            *ngIf="rowItem.node_type === 1"
+            (click)="toggleNodeExpand(rowItem, !rowItem.expand)"
+          >
+          </span>
+          <span [ngStyle]="{ 'padding-left': !rowItem.node_type && rowItem.parent_node_id ? '8px' : 0, display: 'inline-block' }">
+            {{ rowItem.name }}
+          </span>
+        </span>
+      </ng-template>
+    </d-cell>
+    <d-cell-edit>
+      <ng-template let-rowItem="rowItem">
+        <span
+          [ngStyle]="{ 'padding-left': !rowItem.node_type && rowItem.parent_node_id ? '8px' : 0 }"
+          class="edit-padding-fix"
+          style="display: inline-block"
+        >
+          <input
+            class="devui-form-control"
+            name="name"
+            [(ngModel)]="rowItem.name"
+            (ngModelChange)="onEditEnd(rowItem, 'nameEdit')"
+            [attr.maxlength]="100"
+            [attr.minlength]="3"
+          />
+        </span>
+      </ng-template>
+    </d-cell-edit>
+  </d-column>
+
+  <d-column field="property" header="值" [width]="'70px'" [order]="5" [editable]="true" [extraOptions]="{ editableTip: 'btn' }">
+    <d-cell>
+      <ng-template let-rowItem="rowItem">
+        <span class="value">
+          {{ rowItem.property }}
+        </span>
+      </ng-template>
+    </d-cell>
+    <d-cell-edit>
+      <ng-template let-rowItem="rowItem">
+        <span class="edit-padding-fix" style="display: inline-block">
+          <input
+            class="devui-form-control"
+            name="property"
+            [(ngModel)]="rowItem.property"
+            (ngModelChange)="onEditEnd(rowItem, 'propertyEdit')"
+            [attr.maxlength]="100"
+            [attr.minlength]="3"
+          />
+        </span>
+      </ng-template>
+    </d-cell-edit>
+  </d-column>
+
+  <d-column field="type" header="类型" [width]="'80px'" [order]="6" [editable]="true" [extraOptions]="{ editableTip: 'btn' }">
+    <d-cell>
+      <ng-template let-rowItem="rowItem">
+        <span class="value">
+          {{ rowItem.type }}
+        </span>
+      </ng-template>
+    </d-cell>
+    <d-cell-edit>
+      <ng-template let-rowItem="rowItem" let-rowIndex="rowIndex">
+        <d-select
+          *ngIf="!rowItem.node_type"
+          [options]="editOption.type"
+          autoFocus="true"
+          toggleOnFocus="true"
+          [appendToBody]="rowItem.type"
+          [(ngModel)]="rowItem.type"
+          (ngModelChange)="onEditEnd(rowItem, 'typeEdit')"
+        >
+        </d-select>
+      </ng-template>
+    </d-cell-edit>
+  </d-column>
+
+  <d-column field="description" header="描述" [width]="'70px'" [order]="7" [editable]="true" [extraOptions]="{ editableTip: 'btn' }">
+    <d-cell>
+      <ng-template let-rowItem="rowItem">
+        <span class="value">
+          {{ rowItem.description }}
+        </span>
+      </ng-template>
+    </d-cell>
+    <d-cell-edit>
+      <ng-template let-rowItem="rowItem" let-column="column">
+        <span class="edit-padding-fix" style="display: inline-block">
+          <input
+            class="devui-form-control"
+            name="description"
+            [(ngModel)]="rowItem.description"
+            (ngModelChange)="onEditEnd(rowItem, 'description')"
+            [attr.maxlength]="100"
+            [attr.minlength]="3"
+          />
+        </span>
+      </ng-template>
+    </d-cell-edit>
+  </d-column>
+
+  <d-column field="operation" header="操作" [width]="'130px'" [order]="8">
+    <d-cell>
+      <ng-template let-rowItem="rowItem">
+        <span>
+          <ng-container *ngIf="!isSearch">
+            <div
+              *ngIf="rowItem.node_type"
+              class="operationIcon icon-add-directory"
+              title="添加文件夹"
+              (click)="addOperation(rowItem, 'addDataFolder')"
+            ></div>
+            <div
+              *ngIf="rowItem.node_type"
+              class="operationIcon icon-add-file"
+              title="添加节点"
+              (click)="addOperation(rowItem, 'addDataNode')"
+            ></div>
+            <div class="operationIcon icon-add-sub-node" title="插入文件夹" (click)="addOperation(rowItem, 'insertDataFolder')"></div>
+            <div class="operationIcon icon-add-sibling-node" title="插入节点" (click)="addOperation(rowItem, 'insertDataNode')"></div>
+
+            <div class="operationIcon icon-copy" title="复制" (click)="copyAndCut(rowItem, 'copy')"></div>
+            <div class="operationIcon icon-cut" title="剪切" (click)="copyAndCut(rowItem, 'cut')"></div>
+            <div
+              *ngIf="rowItem.node_type && saveCopyClickNode"
+              class="operationIcon icon-copy-to-new"
+              title="粘贴"
+              (click)="paste(rowItem, 'paste')"
+            ></div>
+            <div
+              *ngIf="rowItem.node_id === saveCopyClickNode"
+              class="operationIcon icon-add-manual-use-case"
+              title="粘贴到根"
+              (click)="paste(rowItem, 'toRoot')"
+            ></div>
+          </ng-container>
+          <div class="operationIcon icon-delete" title="移除" (click)="delete(rowItem)"></div>
+        </span>
+      </ng-template>
+    </d-cell>
+  </d-column>
+
+</d-virtual-scroll-tree-table-test>
+
+<div class="saveContent">
+  <d-button id="saveBtn" (click)="saveBtn()">Save</d-button>
+</div>

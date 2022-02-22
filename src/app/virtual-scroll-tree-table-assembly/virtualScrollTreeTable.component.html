@@ -1,0 +1,30 @@
+<div style="padding: 8px; height: 500px">
+  <div cdkScrollable class="devui-cdk-scroll-container" [ngStyle]="{ 'padding-top': virtualScrollPadding }">
+    <cdk-virtual-scroll-viewport 
+      id="data-table-virtual-tree-scroll-test"
+      #cdkVirtualScrollViewport
+      [itemSize]="itemSize"
+      minBufferPx="80"
+      maxBufferPx="200"
+      [style.height]="itemSize * itemCount + 'px'"
+      (scroll)="onBodyScroll()"
+    >
+      <div *cdkVirtualFor="let item of scrollArray"></div>
+    </cdk-virtual-scroll-viewport>
+    <d-data-table #dataTable id="data-table-virtual-tree" [dataSource]="visibleNodes" [scrollable]="false" (mousewheel)="scroll($event)">
+    </d-data-table>
+  </div>
+</div>
+
+<div *ngIf="draggable" id="dragMouseTip" #dragMouseTip [ngStyle]="{ height: itemSize + 'px' }">
+  <span class="dragIcon" [ngStyle]="{ width: dragIconWidth }">
+    <div class="icon-drag-small"></div>
+  </span>
+  <div class="dragLine" *ngFor="let item of dragLine">
+    <div style="position: relative;">
+      <div style="padding-right: 20px;" [ngStyle]="{ width: item.width }">
+        {{ item.field ? item.field : '' }}
+      </div>
+    </div>
+  </div>
+</div>

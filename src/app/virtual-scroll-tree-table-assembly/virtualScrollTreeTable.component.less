@@ -1,0 +1,41 @@
+.devui-cdk-scroll-container {
+  position: relative;
+
+  #data-table-virtual-tree-scroll {
+    width: calc(100% - 3px);
+  }
+
+  #data-table-virtual-tree {
+    position: absolute;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    right: 5px;
+    bottom: 0;
+    width: calc(100% - 8px);
+  }
+}
+
+#dragMouseTip {
+  position: absolute;
+  background-color: #e9edfa;
+  opacity: 0.4;
+  z-index: 9999;
+  visibility: hidden;
+  .dragIcon {
+    padding: 7px 0px 8px 20px;
+    display: inline-block;
+    text-align: center;
+    font-weight: normal;
+    vertical-align: middle;
+  }
+  .dragLine {
+    display: inline-block;
+    background-clip: padding-box;
+    vertical-align: middle;
+    padding: 7px 20px 8px;
+    border-top: none;
+    word-wrap: break-word;
+    word-break: normal;
+  }
+}

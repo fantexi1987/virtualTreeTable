@@ -1,0 +1,146 @@
+<h4>快速加载（虚拟滚动）、展开收起等加载展示功能， 编辑、搜索功能， 当前总数据量 ：{{totleItem}}条</h4>
+<div style="padding: 8px;">
+  <div class="row">
+    <div class="searchSelect">
+      <d-select
+      [options]="searchSelectSource"
+      [(ngModel)]="searchAttr"
+      >
+      </d-select>
+    </div>
+    <d-search style="width: 300px" [placeholder]="'默认全量搜索，可传入要搜索的属性'" [isKeyupSearch]="true" (searchFn)="searchNode($event)"></d-search>
+  </div>
+  <div cdkScrollable class="cdk-scroll-container">
+    <cdk-virtual-scroll-viewport
+      id="virtualScroll"
+      [itemSize]="itemSize"
+      minBufferPx="80"
+      maxBufferPx="200"
+      [style.height]="itemSize * itemCount + 'px'"
+      (scroll)="onBodyScroll()"
+    >
+      <div *cdkVirtualFor="let item of scrollArray"></div>
+    </cdk-virtual-scroll-viewport>
+    <d-data-table
+      id="tree-table"
+      [dataSource]="visibleNodes"
+      [tableWidthConfig]="tableWidthConfig"
+      fixHeader="true"
+      [scrollable]="false"
+      [tableHeight]="tableHeight"
+      (mousewheel)="scrollFunc($event)"
+    >
+      <thead dTableHead>
+        <tr dTableRow>
+          <th dHeadCell>#</th>
+          <th dHeadCell [nestedColumn]="true" [iconFoldTable]="iconParentOpen" [iconUnFoldTable]="iconParentClose" 
+          (toggleChildrenTableEvent)="toggleAllNodesExpand($event)">Title</th>
+          <ng-container *ngFor="let colOption of dataTableOptions.columns">
+            <th dHeadCell>{{ colOption.header }}</th>
+          </ng-container>
+        </tr>
+      </thead>
+      <tbody dTableBody>
+        <ng-template let-rowItem="rowItem" let-rowIndex="rowIndex" let-nestedLayer="nestedLayer" let-nestedIndex="nestedIndex">
+          <tr dTableRow>
+              <td dTableCell>
+                {{rowItem.key}}
+              </td>
+              <td
+                [ngStyle]="{'padding-left': rowItem.level * 20 + 'px'}"
+                dTableCell
+                [rowItem]="rowItem"
+                [editable]="true"
+                [editableTip]="'btn'"
+                [(editing)]="rowItem['titleEdit']"
+                [field]="'title'"
+                [beforeEditStart]="beforeEditStart"
+                [beforeEditEnd]="beforeEditEnd"
+              >
+                <span class="tree-table-icon" [ngClass]="rowItem.expand ? 'icon-open-folder' : 'icon-close-folder'" *ngIf="!rowItem.isLeaf" (click)="toggleNodeExpand(rowItem, rowIndex, !rowItem.expand)"></span>
+                <span *ngIf="!rowItem['titleEdit']" [ngStyle]="{'padding-left': rowItem.isLeaf ? '20px' : 0}">{{ rowItem.title }}</span>
+                <span *ngIf="rowItem['titleEdit']" [ngStyle]="{'padding-left': rowItem.isLeaf ? '20px' : 0}" class="edit-padding-fix" style="display: inline-block;">
+                  <input class="devui-form-control" name="title" [(ngModel)]="rowItem.title" (ngModelChange)="onEditEnd(rowItem, 'titleEdit')" [attr.maxlength]="100" [attr.minlength]="3" />
+                </span>
+              </td>
+              <td dTableCell [editable]="true" [(editing)]="rowItem['lockEdit']">
+                <span *ngIf="!rowItem['lockEdit']">{{ rowItem.lock }}</span>
+                <div *ngIf="rowItem['lockEdit']" class="customized-editor edit-padding-fix">
+                  <d-select
+                    [options]="lockSource"
+                    autoFocus="true"
+                    toggleOnFocus="true"
+                    [appendToBody]="true"
+                    [(ngModel)]="rowItem.lock"
+                    (ngModelChange)="onEditEnd(rowItem, 'lockEdit')"
+                  >
+                  </d-select>
+                </div>
+              </td>
+
+              <td dTableCell [editable]="true" [(editing)]="rowItem['typeEdit']">
+                <span *ngIf="!rowItem['typeEdit']">{{ rowItem.type }}</span>
+                <div *ngIf="rowItem['typeEdit']" class="customized-editor edit-padding-fix">
+                  <d-select
+                    [options]="typeSource"
+                    autoFocus="true"
+                    toggleOnFocus="true"
+                    [appendToBody]="true"
+                    [(ngModel)]="rowItem.type"
+                    (ngModelChange)="onEditEnd(rowItem, 'typeEdit')"
+                  >
+                  </d-select>
+                </div>
+              </td>
+              <td dTableCell [editable]="true" [(editing)]="rowItem['ageEdit']">
+                <span *ngIf="!rowItem['ageEdit']">{{ rowItem.age }}</span>
+                <div *ngIf="rowItem['ageEdit']" class="edit-padding-fix">
+                  <d-input-number [(ngModel)]="rowItem.age" (ngModelChange)="onEditEnd(rowItem, 'ageEdit')"></d-input-number>
+                </div>
+              </td>
+              <td dTableCell [editable]="true" [(editing)]="rowItem['genderEdit']">
+                <span *ngIf="!rowItem['genderEdit']">{{ rowItem.gender }}</span>
+                <div *ngIf="rowItem['genderEdit']" class="genderEdit customized-editor edit-padding-fix">
+                  <d-select
+                    [options]="genderSource"
+                    autoFocus="true"
+                    toggleOnFocus="true"
+                    [appendToBody]="true"
+                    [(ngModel)]="rowItem.gender"
+                    (ngModelChange)="onEditEnd(rowItem, 'genderEdit')"
+                  >
+                  </d-select>
+                </div>
+              </td>
+              <td dTableCell [editable]="true" [(editing)]="rowItem['dateEdit']">
+                <span *ngIf="!rowItem['dateEdit']">{{ rowItem.date }}</span>
+                <form *ngIf="rowItem['dateEdit']" class="form-inline edit-padding-fix">
+                  <div class="devui-form-group">
+                    <div class="devui-input-group devui-dropdown-origin">
+                      <input
+                        class="devui-form-control search"
+                        name="date"
+                        [(ngModel)]="rowItem.date"
+                        dDatepicker
+                        appendToBody
+                        #datePicker="datepicker"
+                        [dateFormat]="'y/MM/dd'"
+                        [autoOpen]="true"
+                        (ngModelChange)="onEditEnd(rowItem, 'dateEdit')"
+                      />
+                      <div class="devui-input-group-addon" (click)="datePicker.toggle()">
+                        <i class="icon icon-calendar"></i>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </td>
+            </tr>
+        </ng-template>
+      </tbody>
+    </d-data-table>
+  </div>
+  <div class="saveContent">
+    <d-button id="saveBtn" (click)="saveBtnClick()">Save</d-button>
+  </div>
+</div>
